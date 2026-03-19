@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }} — Skills Catalog{% endblock %}
+
+{% block content %}
+<div class="item-page">
+
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb">
+    <a href="/">← Catalog</a>
+    <span>/</span>
+    <span>{{ item.category }}</span>
+    <span>/</span>
+    <strong>{{ item.name }}</strong>
+  </nav>
+
+  <div class="item-layout">
+
+    <!-- Left: content -->
+    <article class="item-content">
+      <div class="item-hero">
+        <span class="category-badge cat-{{ item.category }}">{{ item.category }}</span>
+        {% if item.deprecated %}<span class="deprecated-badge">deprecated</span>{% endif %}
+        <h1>{{ item.name }}</h1>
+        <p class="item-description">{{ item.description }}</p>
+      </div>
+
+      {% if item.tags %}
+      <div class="item-tags">
+        {% for tag in item.tags %}
+          <a href="/?tag={{ tag }}" class="tag">{{ tag }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="markdown-body">
+        {{ rendered_html | safe }}
+      </div>
+    </article>
+
+    <!-- Right: API panel -->
+    <aside class="api-panel">
+
+      <div class="api-card">
+        <div class="api-card-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+          Use this via API
+        </div>
+
+        <div class="api-section">
+          <div class="api-label">Endpoint</div>
+          <div class="api-code-block">
+            <span class="method-badge">GET</span>
+            <code id="endpoint-url">{{ api_url }}</code>
+            <button class="copy-btn" onclick="copyText('endpoint-url', this)" title="Copy URL">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="api-section">
+          <div class="api-label">cURL</div>
+          <div class="api-code-block api-code-block--multiline">
+            <code id="curl-cmd">{{ curl_cmd }}</code>
+            <button class="copy-btn" onclick="copyText('curl-cmd', this)" title="Copy cURL">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="api-section">
+          <div class="api-label">Python</div>
+          <div class="api-code-block api-code-block--multiline">
+            <code id="py-snippet">import httpx
+resp = httpx.get("{{ api_url }}")
+item = resp.json()</code>
+            <button class="copy-btn" onclick="copyText('py-snippet', this)" title="Copy Python">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metadata -->
+      <div class="meta-card">
+        <div class="meta-card-header">Details</div>
+        <dl class="meta-list">
+          <dt>Version</dt>
+          <dd>{{ item.version }}</dd>
+          {% if item.author %}
+          <dt>Author</dt>
+          <dd>{{ item.author }}</dd>
+          {% endif %}
+          {% if item.requires %}
+          <dt>Requires</dt>
+          <dd>{{ item.requires | join(", ") }}</dd>
+          {% endif %}
+          {% if item.changelog %}
+          <dt>Changelog</dt>
+          <dd>{{ item.changelog }}</dd>
+          {% endif %}
+          <dt>File</dt>
+          <dd><code class="filepath">{{ item.file_path }}</code></dd>
+        </dl>
+      </div>
+
+      <!-- Versions -->
+      {% if versions | length > 1 %}
+      <div class="meta-card">
+        <div class="meta-card-header">Versions</div>
+        <ul class="version-list">
+          {% for v in versions %}
+          <li class="{% if v.version == item.version %}version-current{% endif %}">
+            <a href="/ui/items/{{ v.name }}?path={{ v.file_path }}">
+              v{{ v.version }}
+              {% if v.version == item.version %}<span class="current-label">current</span>{% endif %}
+              {% if v.deprecated %}<span class="deprecated-badge">deprecated</span>{% endif %}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+    </aside>
+  </div>
+</div>
+
+<script>
+function copyText(id, btn) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 1800);
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Skills Catalog{% endblock %}
+
+{% block content %}
+<div class="catalog-header">
+  <h1>Enterprise Skills Catalog</h1>
+  <p class="subtitle">{{ total }} item{{ 's' if total != 1 }} available</p>
+</div>
+
+<!-- Search bar -->
+<form class="search-form" method="get" action="/">
+  <div class="search-row">
+    <input
+      type="search"
+      name="q"
+      value="{{ query }}"
+      placeholder="Search skills, rules, workflows…"
+      autofocus
+      class="search-input"
+    />
+    <button type="submit" class="btn-primary">Search</button>
+    {% if query or selected_category or selected_tag %}
+      <a href="/" class="btn-ghost">Clear</a>
+    {% endif %}
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-row">
+    <!-- Category pills -->
+    <div class="filter-group">
+      <span class="filter-label">Category</span>
+      <a href="/?q={{ query }}" class="pill {% if not selected_category %}pill-active{% endif %}">All</a>
+      {% for cat in categories %}
+        <a href="/?q={{ query }}&category={{ cat }}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}"
+           class="pill {% if selected_category == cat %}pill-active{% endif %}">
+          {{ cat }}
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- Tag pills (top 20) -->
+    {% if all_tags %}
+    <div class="filter-group">
+      <span class="filter-label">Tags</span>
+      {% for tc in all_tags[:20] %}
+        <a href="/?q={{ query }}{% if selected_category %}&category={{ selected_category }}{% endif %}&tag={{ tc.tag }}"
+           class="pill tag-pill {% if selected_tag == tc.tag %}pill-active{% endif %}">
+          {{ tc.tag }} <span class="pill-count">{{ tc.count }}</span>
+        </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Results -->
+{% if items %}
+<div class="item-grid">
+  {% for item in items %}
+  <a href="/ui/items/{{ item.name }}" class="card">
+    <div class="card-top">
+      <span class="category-badge cat-{{ item.category }}">{{ item.category }}</span>
+      {% if item.deprecated %}<span class="deprecated-badge">deprecated</span>{% endif %}
+      <span class="version-badge">v{{ item.version }}</span>
+    </div>
+    <h2 class="card-title">{{ item.name }}</h2>
+    <p class="card-desc">{{ item.description[:160] }}{% if item.description|length > 160 %}…{% endif %}</p>
+    {% if item.tags %}
+    <div class="card-tags">
+      {% for tag in item.tags[:5] %}
+        <span class="tag">{{ tag }}</span>
+      {% endfor %}
+      {% if item.tags|length > 5 %}<span class="tag tag-more">+{{ item.tags|length - 5 }}</span>{% endif %}
+    </div>
+    {% endif %}
+    {% if item.author %}
+    <div class="card-author">by {{ item.author }}</div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+  </svg>
+  <p>No items found{% if query %} for <strong>"{{ query }}"</strong>{% endif %}</p>
+  <a href="/" class="btn-ghost">Reset filters</a>
+</div>
+{% endif %}
+{% endblock %}
