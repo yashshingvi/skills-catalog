@@ -1,5 +1,9 @@
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException, Query
-from ..models import CatalogItem, SearchResult
+from fastapi.responses import PlainTextResponse
+
+from ..models import BundleItem, BundleResponse, CatalogItem, SearchResult
 from .. import search, store
 from ..indexer import scan_and_index
 
@@ -58,6 +62,48 @@ def by_path(path: str = Query(...)):
 def refresh():
     count = scan_and_index()
     return {"refreshed": count, "total": store.count()}
+
+
+@router.get("/items/bundle", response_model=BundleResponse)
+def bundle(items: str = Query(..., description="Comma-separated item names")):
+    names = [n.strip() for n in items.split(",") if n.strip()]
+    result_items: list[BundleItem] = []
+    errors: list[str] = []
+
+    for name in names:
+        item = search.get_latest_by_name(name)
+        if not item:
+            errors.append(name)
+            continue
+        file_path = Path(item.file_path)
+        if not file_path.exists():
+            file_path = Path.cwd() / item.file_path
+        if not file_path.exists():
+            errors.append(name)
+            continue
+        content = file_path.read_text(encoding="utf-8")
+        result_items.append(BundleItem(
+            name=item.name,
+            version=item.version,
+            category=item.category,
+            content=content,
+        ))
+
+    return BundleResponse(items=result_items, errors=errors)
+
+
+@router.get("/items/{name}/raw")
+def get_raw(name: str):
+    item = search.get_latest_by_name(name)
+    if not item:
+        raise HTTPException(404, f"No item named: {name}")
+    file_path = Path(item.file_path)
+    if not file_path.exists():
+        file_path = Path.cwd() / item.file_path
+    if not file_path.exists():
+        raise HTTPException(404, f"Source file not found: {item.file_path}")
+    content = file_path.read_text(encoding="utf-8")
+    return PlainTextResponse(content, media_type="text/markdown")
 
 
 @router.get("/items/{name}/versions", response_model=list[CatalogItem])

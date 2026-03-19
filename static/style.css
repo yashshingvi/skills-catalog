@@ -90,6 +90,7 @@ code { font-family: var(--mono); font-size: 0.88em; }
   transition: color .15s, border-color .15s;
 }
 .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+.btn-sm { padding: .4rem .75rem; font-size: .8rem; }
 
 /* ── Filter pills ──────────────────────────────────────────────────────────── */
 .filters-row { display: flex; flex-direction: column; gap: .75rem; }
@@ -132,6 +133,59 @@ code { font-family: var(--mono); font-size: 0.88em; }
 .card-tags { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .2rem; }
 .card-author { font-size: .78rem; color: var(--muted); margin-top: auto; }
 
+/* ── Card wrapper + checkbox ───────────────────────────────────────────────── */
+.card-wrapper { position: relative; }
+.card-select {
+  position: absolute; top: .65rem; right: .65rem; z-index: 10;
+  width: 22px; height: 22px; cursor: pointer;
+}
+.card-select input { display: none; }
+.card-select .checkmark {
+  display: block; width: 22px; height: 22px; border-radius: 5px;
+  border: 2px solid var(--border); background: var(--surface);
+  transition: all .15s; position: relative;
+}
+.card-select:hover .checkmark { border-color: var(--accent); }
+.card-select input:checked + .checkmark {
+  background: var(--accent); border-color: var(--accent);
+}
+.card-select input:checked + .checkmark::after {
+  content: ""; display: block; position: absolute;
+  left: 6px; top: 2px; width: 5px; height: 10px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* ── Floating install panel ────────────────────────────────────────────────── */
+.install-panel {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 200;
+  background: rgba(26,29,39,.96);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--accent);
+  padding: .8rem 1.5rem;
+  transform: translateY(100%);
+  transition: transform .25s ease;
+}
+.install-panel.visible { transform: translateY(0); }
+.install-panel-inner {
+  max-width: 1280px; margin: 0 auto;
+  display: flex; align-items: center; gap: 1rem;
+}
+.install-count {
+  font-size: .85rem; font-weight: 600; color: var(--accent);
+  white-space: nowrap;
+}
+.install-command {
+  flex: 1; display: flex; align-items: center; gap: .5rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: .45rem .75rem;
+}
+.install-command code {
+  flex: 1; color: var(--green); font-family: var(--mono);
+  font-size: .88rem; white-space: nowrap; overflow-x: auto;
+}
+
 /* ── Badges ────────────────────────────────────────────────────────────────── */
 .category-badge {
   font-size: .72rem; padding: .2rem .55rem; border-radius: 999px;
@@ -140,6 +194,7 @@ code { font-family: var(--mono); font-size: 0.88em; }
 .cat-skills   { background: rgba(108,143,255,.15); color: #8da8ff; }
 .cat-workflows{ background: rgba(74,222,128,.12);  color: #4ade80; }
 .cat-rules    { background: rgba(251,191,36,.12);  color: #fbbf24; }
+.cat-agents   { background: rgba(192,132,252,.15); color: #c084fc; }
 
 .version-badge {
   margin-left: auto; font-size: .72rem; color: var(--muted);
@@ -189,6 +244,13 @@ code { font-family: var(--mono); font-size: 0.88em; }
 .item-description { color: var(--muted); font-size: 1rem; line-height: 1.6; }
 
 .item-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.75rem; }
+
+/* ── Section label ─────────────────────────────────────────────────────────── */
+.section-label {
+  font-size: .75rem; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: .5rem;
+}
 
 /* ── Markdown body ─────────────────────────────────────────────────────────── */
 .markdown-body {
@@ -264,6 +326,10 @@ code { font-family: var(--mono); font-size: 0.88em; }
   font-size: .7rem; font-weight: 700; padding: .15rem .45rem;
   border-radius: 4px; background: rgba(74,222,128,.15); color: var(--green);
   font-family: var(--mono); flex-shrink: 0;
+}
+
+.method-cli {
+  background: rgba(192,132,252,.15); color: #c084fc;
 }
 
 .copy-btn {

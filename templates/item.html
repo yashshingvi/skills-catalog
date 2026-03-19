@@ -32,6 +32,9 @@
       </div>
       {% endif %}
 
+      {% if item.category == "agents" %}
+      <div class="section-label">System Prompt</div>
+      {% endif %}
       <div class="markdown-body">
         {{ rendered_html | safe }}
       </div>
@@ -86,6 +89,19 @@ item = resp.json()</code>
             </button>
           </div>
         </div>
+
+        <div class="api-section">
+          <div class="api-label">Install with skillsctl</div>
+          <div class="api-code-block">
+            <span class="method-badge method-cli">CLI</span>
+            <code id="skillsctl-cmd">skillsctl install {{ item.name }}</code>
+            <button class="copy-btn" onclick="copyText('skillsctl-cmd', this)" title="Copy command">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Metadata -->
@@ -97,6 +113,14 @@ item = resp.json()</code>
           {% if item.author %}
           <dt>Author</dt>
           <dd>{{ item.author }}</dd>
+          {% endif %}
+          {% if item.model %}
+          <dt>Model</dt>
+          <dd><code>{{ item.model }}</code></dd>
+          {% endif %}
+          {% if item.tools %}
+          <dt>Tools</dt>
+          <dd>{{ item.tools | join(", ") }}</dd>
           {% endif %}
           {% if item.requires %}
           <dt>Requires</dt>

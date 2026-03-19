@@ -25,7 +25,7 @@ def _infer_category(file_path: Path) -> str:
       content/skills/bar.md            → "skills"
       anything/my-folder/baz.md        → "my-folder"
     """
-    known = {"skills", "workflows", "rules", "tools", "policies", "templates", "guides"}
+    known = {"skills", "workflows", "rules", "agents", "tools", "policies", "templates", "guides"}
     parts = [p.lower() for p in file_path.parts]
     # Walk from deepest folder upward (exclude filename)
     for part in reversed(parts[:-1]):

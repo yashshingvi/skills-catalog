@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -18,17 +19,56 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
+logger = logging.getLogger(__name__)
 
 _watcher = CatalogWatcher()
 
 
+async def _periodic_sync(interval: int) -> None:
+    """Background task: pull latest git changes and re-index."""
+    from .git_source import pull_latest
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            changed = pull_latest(
+                settings.content_cache_dir.resolve(),
+                settings.content_branch,
+            )
+            if changed:
+                scan_and_index()
+        except Exception as exc:
+            logger.error("Periodic sync failed: %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # If a git repo is configured, clone it and override content_dir
+    if settings.content_repo:
+        from .git_source import ensure_repo
+        cache_path = ensure_repo(
+            settings.content_repo,
+            settings.content_branch,
+            settings.content_cache_dir.resolve(),
+        )
+        settings.content_dir = cache_path
+        logger.info("Content source: git repo %s → %s", settings.content_repo, cache_path)
+
     app.state.watcher = _watcher
     app.state.content_dir = settings.content_dir.resolve()
+
     scan_and_index()
     _watcher.start()
+
+    # Start periodic git sync if configured
+    sync_task = None
+    if settings.content_repo and settings.sync_interval > 0:
+        sync_task = asyncio.create_task(_periodic_sync(settings.sync_interval))
+        logger.info("Periodic sync enabled: every %ds", settings.sync_interval)
+
     yield
+
+    if sync_task:
+        sync_task.cancel()
     _watcher.stop()
 
 
@@ -44,6 +84,10 @@ templates = Jinja2Templates(directory=str(_here / "templates"))
 app.include_router(health.router)
 app.include_router(tags.router)
 app.include_router(items.router)
+
+# Webhook router (optional git refresh endpoint)
+from .routers import webhook
+app.include_router(webhook.router)
 
 
 # ── Browser UI ─────────────────────────────────────────────────────────────────

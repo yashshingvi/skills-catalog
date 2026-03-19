@@ -5,3 +5,7 @@ __pycache__/
 .venv/
 venv/
 catalog.db
+.content-cache/
+*.egg-info/
+dist/
+build/

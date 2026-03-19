@@ -14,7 +14,7 @@
       type="search"
       name="q"
       value="{{ query }}"
-      placeholder="Search skills, rules, workflows…"
+      placeholder="Search skills, agents, rules, workflows…"
       autofocus
       class="search-input"
     />
@@ -57,26 +57,32 @@
 {% if items %}
 <div class="item-grid">
   {% for item in items %}
-  <a href="/ui/items/{{ item.name }}" class="card">
-    <div class="card-top">
-      <span class="category-badge cat-{{ item.category }}">{{ item.category }}</span>
-      {% if item.deprecated %}<span class="deprecated-badge">deprecated</span>{% endif %}
-      <span class="version-badge">v{{ item.version }}</span>
-    </div>
-    <h2 class="card-title">{{ item.name }}</h2>
-    <p class="card-desc">{{ item.description[:160] }}{% if item.description|length > 160 %}…{% endif %}</p>
-    {% if item.tags %}
-    <div class="card-tags">
-      {% for tag in item.tags[:5] %}
-        <span class="tag">{{ tag }}</span>
-      {% endfor %}
-      {% if item.tags|length > 5 %}<span class="tag tag-more">+{{ item.tags|length - 5 }}</span>{% endif %}
-    </div>
-    {% endif %}
-    {% if item.author %}
-    <div class="card-author">by {{ item.author }}</div>
-    {% endif %}
-  </a>
+  <div class="card-wrapper">
+    <label class="card-select" title="Select for install">
+      <input type="checkbox" class="item-checkbox" value="{{ item.name }}" />
+      <span class="checkmark"></span>
+    </label>
+    <a href="/ui/items/{{ item.name }}" class="card">
+      <div class="card-top">
+        <span class="category-badge cat-{{ item.category }}">{{ item.category }}</span>
+        {% if item.deprecated %}<span class="deprecated-badge">deprecated</span>{% endif %}
+        <span class="version-badge">v{{ item.version }}</span>
+      </div>
+      <h2 class="card-title">{{ item.name }}</h2>
+      <p class="card-desc">{{ item.description[:160] }}{% if item.description|length > 160 %}…{% endif %}</p>
+      {% if item.tags %}
+      <div class="card-tags">
+        {% for tag in item.tags[:5] %}
+          <span class="tag">{{ tag }}</span>
+        {% endfor %}
+        {% if item.tags|length > 5 %}<span class="tag tag-more">+{{ item.tags|length - 5 }}</span>{% endif %}
+      </div>
+      {% endif %}
+      {% if item.author %}
+      <div class="card-author">by {{ item.author }}</div>
+      {% endif %}
+    </a>
+  </div>
   {% endfor %}
 </div>
 {% else %}
@@ -88,4 +94,58 @@
   <a href="/" class="btn-ghost">Reset filters</a>
 </div>
 {% endif %}
+
+<!-- Floating install panel -->
+<div id="install-panel" class="install-panel">
+  <div class="install-panel-inner">
+    <span id="install-count" class="install-count">0 selected</span>
+    <div class="install-command">
+      <code id="install-cmd">skillsctl install</code>
+      <button class="copy-btn" onclick="copyInstallCmd()" title="Copy command">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+      </button>
+    </div>
+    <button class="btn-ghost btn-sm" onclick="clearSelection()">Clear</button>
+  </div>
+</div>
+
+<script>
+function updatePanel() {
+  const checked = document.querySelectorAll('.item-checkbox:checked');
+  const panel = document.getElementById('install-panel');
+  const cmd = document.getElementById('install-cmd');
+  const count = document.getElementById('install-count');
+
+  if (checked.length > 0) {
+    const names = Array.from(checked).map(cb => cb.value).join(' ');
+    cmd.textContent = 'skillsctl install ' + names;
+    count.textContent = checked.length + ' selected';
+    panel.classList.add('visible');
+  } else {
+    panel.classList.remove('visible');
+  }
+}
+
+function clearSelection() {
+  document.querySelectorAll('.item-checkbox:checked').forEach(cb => { cb.checked = false; });
+  updatePanel();
+}
+
+function copyInstallCmd() {
+  const text = document.getElementById('install-cmd').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.currentTarget;
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 1800);
+  });
+}
+
+document.addEventListener('change', function(e) {
+  if (e.target.classList.contains('item-checkbox')) {
+    updatePanel();
+  }
+});
+</script>
 {% endblock %}
