@@ -107,21 +107,66 @@
         </svg>
       </button>
     </div>
+    <button class="btn-download" onclick="downloadSkillsYaml()" title="Download skills.yaml lockfile">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      skills.yaml
+    </button>
     <button class="btn-ghost btn-sm" onclick="clearSelection()">Clear</button>
   </div>
 </div>
 
+<!-- Instructions modal -->
+<div id="yaml-modal" class="yaml-modal" onclick="closeModal(event)">
+  <div class="yaml-modal-box">
+    <h3>skills.yaml downloaded</h3>
+    <p>Place the file in your project root, then run:</p>
+    <div class="yaml-modal-cmd">
+      <code>skillsctl sync</code>
+      <button class="copy-btn" onclick="copyModalCmd()" title="Copy">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+      </button>
+    </div>
+    <p class="yaml-modal-hint">This downloads each pinned item into <code>.skillsctl/{category}/</code> in your project (or your configured base dir).</p>
+    <button class="btn-primary btn-sm" onclick="document.getElementById('yaml-modal').classList.remove('open')">Done</button>
+  </div>
+</div>
+
 <script>
+const STORAGE_KEY = 'catalog-selected';
+
+function getStored() {
+  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+
+function saveStored(names) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...names]));
+}
+
 function updatePanel() {
-  const checked = document.querySelectorAll('.item-checkbox:checked');
+  // Items visible on this page
+  const allOnPage = new Set(Array.from(document.querySelectorAll('.item-checkbox')).map(cb => cb.value));
+  const checkedOnPage = new Set(Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value));
+
+  // Merge: keep stored items NOT on this page, update items that ARE on this page
+  const stored = getStored();
+  allOnPage.forEach(name => {
+    if (checkedOnPage.has(name)) stored.add(name);
+    else stored.delete(name);
+  });
+  saveStored(stored);
+
   const panel = document.getElementById('install-panel');
   const cmd = document.getElementById('install-cmd');
   const count = document.getElementById('install-count');
 
-  if (checked.length > 0) {
-    const names = Array.from(checked).map(cb => cb.value).join(' ');
-    cmd.textContent = 'skillsctl install ' + names;
-    count.textContent = checked.length + ' selected';
+  if (stored.size > 0) {
+    cmd.textContent = 'skillsctl install ' + [...stored].join(' ');
+    count.textContent = stored.size + ' selected';
     panel.classList.add('visible');
   } else {
     panel.classList.remove('visible');
@@ -130,8 +175,19 @@ function updatePanel() {
 
 function clearSelection() {
   document.querySelectorAll('.item-checkbox:checked').forEach(cb => { cb.checked = false; });
+  saveStored(new Set());
   updatePanel();
 }
+
+// Restore selections on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const stored = getStored();
+  if (stored.size === 0) return;
+  document.querySelectorAll('.item-checkbox').forEach(cb => {
+    if (stored.has(cb.value)) cb.checked = true;
+  });
+  updatePanel();
+});
 
 function copyInstallCmd() {
   const text = document.getElementById('install-cmd').textContent;
@@ -147,5 +203,54 @@ document.addEventListener('change', function(e) {
     updatePanel();
   }
 });
+
+async function downloadSkillsYaml() {
+  const stored = getStored();
+  if (stored.size === 0) return;
+
+  const names = [...stored];
+  let versions = {};
+
+  try {
+    const res = await fetch('/api/v1/items/bundle?items=' + names.join(','));
+    if (res.ok) {
+      const data = await res.json();
+      data.items.forEach(item => { versions[item.name] = item.version; });
+    }
+  } catch (e) {
+    // Fall back to no versions if fetch fails
+  }
+
+  const source = window.location.origin;
+  let yaml = 'source: ' + source + '\ninstalled:\n';
+  names.sort().forEach(name => {
+    const ver = versions[name] ? '"' + versions[name] + '"' : '"latest"';
+    yaml += '  ' + name + ': ' + ver + '\n';
+  });
+
+  const blob = new Blob([yaml], { type: 'text/yaml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'skills.yaml';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  document.getElementById('yaml-modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('yaml-modal')) {
+    e.target.classList.remove('open');
+  }
+}
+
+function copyModalCmd() {
+  navigator.clipboard.writeText('skillsctl sync').then(() => {
+    const btn = event.currentTarget;
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 1800);
+  });
+}
 </script>
 {% endblock %}

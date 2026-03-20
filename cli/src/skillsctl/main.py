@@ -34,6 +34,7 @@ def cli(ctx: click.Context, source: str | None) -> None:
 
 
 # Register commands
+from .commands.config import config
 from .commands.install import install
 from .commands.remove import remove
 from .commands.list_cmd import list_cmd
@@ -41,6 +42,7 @@ from .commands.search import search
 from .commands.sync import sync
 from .commands.update import update
 
+cli.add_command(config)
 cli.add_command(install)
 cli.add_command(remove)
 cli.add_command(list_cmd)

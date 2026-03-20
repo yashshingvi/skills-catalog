@@ -1,8 +1,6 @@
 """skillsctl sync — sync installed items to their catalog versions."""
 from __future__ import annotations
 
-from pathlib import Path
-
 import click
 from rich.console import Console
 
@@ -10,7 +8,6 @@ from ..client import CatalogClient
 from ..lockfile import Lockfile
 
 console = Console()
-SKILLS_DIR = ".skills"
 
 
 @click.command("sync")
@@ -20,6 +17,7 @@ def sync(ctx: click.Context) -> None:
     client: CatalogClient = ctx.obj["client"]
     lockfile: Lockfile = ctx.obj["lockfile"]
     project_root = lockfile.path.parent
+    base_dir = lockfile.resolve_base_dir()
 
     if not lockfile.installed:
         console.print("[dim]Nothing to sync — no items in skills.yaml[/]")
@@ -29,7 +27,7 @@ def sync(ctx: click.Context) -> None:
     unchanged = 0
     errors = 0
 
-    for name, local_version in list(lockfile.installed.items()):
+    for name, entry in list(lockfile.installed.items()):
         item = client.get_item(name)
         if item is None:
             console.print(f"  [yellow]! {name}[/] — not found in catalog")
@@ -43,15 +41,17 @@ def sync(ctx: click.Context) -> None:
             errors += 1
             continue
 
-        category = item["category"]
-        target_dir = project_root / SKILLS_DIR / category
-        target_dir.mkdir(parents=True, exist_ok=True)
-        target_file = target_dir / f"{name}.md"
-        target_file.write_text(raw, encoding="utf-8")
-        lockfile.add(name, remote_version)
+        if entry.path is not None:
+            target_dir = project_root / entry.path
+        else:
+            target_dir = project_root / base_dir / item["category"]
 
-        if local_version != remote_version:
-            console.print(f"  [green]+ {name}[/] {local_version} → {remote_version}")
+        target_dir.mkdir(parents=True, exist_ok=True)
+        (target_dir / f"{name}.md").write_text(raw, encoding="utf-8")
+        lockfile.add(name, remote_version, path=entry.path)
+
+        if entry.version != remote_version:
+            console.print(f"  [green]+ {name}[/] {entry.version} → {remote_version}")
             updated += 1
         else:
             unchanged += 1
