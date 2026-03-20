@@ -248,6 +248,8 @@ installed:
   slack-ops-agent: "1.0.0"
 ```
 
+You can also **generate this file from the UI**: select items on the catalog page, click "Download skills.yaml", place the file in your project root, then run `skillsctl sync` to install everything at once.
+
 Installed files are saved to `.skills/{category}/{name}.md`:
 
 ```
@@ -310,7 +312,11 @@ The catalog includes a dark-themed web interface at the root URL (`/`).
 - Card grid with all items
 - Search bar with full-text search
 - Filter by category (pills) and tags
-- Checkbox multi-select → generates a `skillsctl install` command with copy button
+- Checkbox multi-select on cards → floating install panel with:
+  - `skillsctl install <name1> <name2> ...` command with one-click copy
+  - **Download `skills.yaml`** button — generates a lockfile with pinned versions and triggers a browser download
+  - After downloading, a modal shows: *"Place this file in your project root and run `skillsctl sync`"*
+- Selections persist across search/filter/tag navigation via `localStorage`
 
 **Item detail page (`/ui/items/{name}`)**
 - Rendered markdown content
