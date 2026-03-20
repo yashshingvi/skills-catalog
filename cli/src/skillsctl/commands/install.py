@@ -46,7 +46,7 @@ def _target_file(
     category subfolder.  Otherwise files go to {base_dir}/{category}/{name}.md.
     """
     if custom_path is not None:
-        return (project_root / custom_path).resolve() / f"{name}.md"
+        return project_root / custom_path / f"{name}.md"
     return project_root / base_dir / category / f"{name}.md"
 
 
@@ -115,7 +115,7 @@ def install(
         target_file.parent.mkdir(parents=True, exist_ok=True)
         target_file.write_text(bi["content"], encoding="utf-8")
 
-        stored_path = str(Path(effective_path)) if effective_path is not None else None
+        stored_path = effective_path  # keep as-is; no Path normalization (avoids \ on Windows)
         lockfile.add(name, bi["version"], path=stored_path)
         installed.append((name, bi["version"], category, target_file, is_dep))
 
