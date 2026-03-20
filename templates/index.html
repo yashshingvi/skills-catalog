@@ -112,16 +112,37 @@
 </div>
 
 <script>
+const STORAGE_KEY = 'catalog-selected';
+
+function getStored() {
+  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+
+function saveStored(names) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...names]));
+}
+
 function updatePanel() {
-  const checked = document.querySelectorAll('.item-checkbox:checked');
+  // Items visible on this page
+  const allOnPage = new Set(Array.from(document.querySelectorAll('.item-checkbox')).map(cb => cb.value));
+  const checkedOnPage = new Set(Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value));
+
+  // Merge: keep stored items NOT on this page, update items that ARE on this page
+  const stored = getStored();
+  allOnPage.forEach(name => {
+    if (checkedOnPage.has(name)) stored.add(name);
+    else stored.delete(name);
+  });
+  saveStored(stored);
+
   const panel = document.getElementById('install-panel');
   const cmd = document.getElementById('install-cmd');
   const count = document.getElementById('install-count');
 
-  if (checked.length > 0) {
-    const names = Array.from(checked).map(cb => cb.value).join(' ');
-    cmd.textContent = 'skillsctl install ' + names;
-    count.textContent = checked.length + ' selected';
+  if (stored.size > 0) {
+    cmd.textContent = 'skillsctl install ' + [...stored].join(' ');
+    count.textContent = stored.size + ' selected';
     panel.classList.add('visible');
   } else {
     panel.classList.remove('visible');
@@ -130,8 +151,19 @@ function updatePanel() {
 
 function clearSelection() {
   document.querySelectorAll('.item-checkbox:checked').forEach(cb => { cb.checked = false; });
+  saveStored(new Set());
   updatePanel();
 }
+
+// Restore selections on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const stored = getStored();
+  if (stored.size === 0) return;
+  document.querySelectorAll('.item-checkbox').forEach(cb => {
+    if (stored.has(cb.value)) cb.checked = true;
+  });
+  updatePanel();
+});
 
 function copyInstallCmd() {
   const text = document.getElementById('install-cmd').textContent;
