@@ -20,6 +20,9 @@ skillsctl install send-slack-notification
 # Install multiple items with dependencies
 skillsctl install send-slack-notification slack-ops-agent --with-deps
 
+# Install into a custom directory (flat, no category subfolder)
+skillsctl install my-rule --path .claude/commands
+
 # List installed items
 skillsctl list
 
@@ -57,6 +60,9 @@ installed:
   send-slack-notification: "2.1.0"
   http-request: "1.3.0"
   slack-ops-agent: "1.0.0"
+  my-rule:                   # installed with --path
+    version: "1.0.0"
+    path: .claude/commands
 ```
 
-Installed files are saved to `.skills/{category}/{name}.md`.
+By default files are saved to `.skills/{category}/{name}.md`. Use `--path <dir>` at install time to write to a custom directory instead — the path is stored in `skills.yaml` and respected by `sync`, `update`, and `remove` automatically.

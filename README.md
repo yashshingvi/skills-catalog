@@ -212,6 +212,7 @@ skillsctl search "slack" --category skills --tag api
 skillsctl install <name1> <name2> ...
 skillsctl install send-slack-notification --with-deps    # resolves requires
 skillsctl install slack-ops-agent --no-deps              # skip dependencies
+skillsctl install my-rule --path .claude/commands        # custom output directory
 
 # List installed items
 skillsctl list
@@ -236,6 +237,20 @@ skillsctl --source https://catalog.acme-corp.com install my-skill
 export SKILLSCTL_SOURCE=https://catalog.acme-corp.com
 ```
 
+### `--path` — custom output directory
+
+By default files land in `.skills/{category}/{name}.md`. Use `--path` to write them anywhere:
+
+```bash
+# Install a rule directly into Claude Code's commands folder
+skillsctl install no-direct-prod-deploy --path .claude/commands
+
+# Install a prompt into a custom prompts directory
+skillsctl install summarise-ticket --path src/prompts
+```
+
+Files are written flat as `{name}.md` — no category subfolder is added. The path is remembered per-item in `skills.yaml` so `sync`, `update`, and `remove` all pick it up automatically. Dependencies installed via `--with-deps` always go to the default `.skills/{category}/` location.
+
 ### Lockfile (`skills.yaml`)
 
 `skillsctl` maintains a `skills.yaml` in your project root:
@@ -245,12 +260,14 @@ source: https://catalog.acme-corp.com
 installed:
   http-request: "1.3.0"
   send-slack-notification: "2.1.0"
-  slack-ops-agent: "1.0.0"
+  no-direct-prod-deploy:           # installed with --path
+    version: "1.0.0"
+    path: .claude/commands
 ```
 
 You can also **generate this file from the UI**: select items on the catalog page, click "Download skills.yaml", place the file in your project root, then run `skillsctl sync` to install everything at once.
 
-Installed files are saved to `.skills/{category}/{name}.md`:
+Installed files are saved to `.skills/{category}/{name}.md` by default, or to the custom path stored in `skills.yaml`:
 
 ```
 your-project/
@@ -261,6 +278,9 @@ your-project/
 │   │   └── send-slack-notification.md
 │   └── agents/
 │       └── slack-ops-agent.md
+├── .claude/
+│   └── commands/
+│       └── no-direct-prod-deploy.md   # installed with --path
 └── ... your code ...
 ```
 
