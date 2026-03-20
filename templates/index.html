@@ -107,7 +107,31 @@
         </svg>
       </button>
     </div>
+    <button class="btn-download" onclick="downloadSkillsYaml()" title="Download skills.yaml lockfile">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      skills.yaml
+    </button>
     <button class="btn-ghost btn-sm" onclick="clearSelection()">Clear</button>
+  </div>
+</div>
+
+<!-- Instructions modal -->
+<div id="yaml-modal" class="yaml-modal" onclick="closeModal(event)">
+  <div class="yaml-modal-box">
+    <h3>skills.yaml downloaded</h3>
+    <p>Place the file in your project root, then run:</p>
+    <div class="yaml-modal-cmd">
+      <code>skillsctl sync</code>
+      <button class="copy-btn" onclick="copyModalCmd()" title="Copy">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+      </button>
+    </div>
+    <p class="yaml-modal-hint">This downloads each pinned skill into <code>.skills/</code> in your project.</p>
+    <button class="btn-primary btn-sm" onclick="document.getElementById('yaml-modal').classList.remove('open')">Done</button>
   </div>
 </div>
 
@@ -179,5 +203,54 @@ document.addEventListener('change', function(e) {
     updatePanel();
   }
 });
+
+async function downloadSkillsYaml() {
+  const stored = getStored();
+  if (stored.size === 0) return;
+
+  const names = [...stored];
+  let versions = {};
+
+  try {
+    const res = await fetch('/api/v1/items/bundle?items=' + names.join(','));
+    if (res.ok) {
+      const data = await res.json();
+      data.items.forEach(item => { versions[item.name] = item.version; });
+    }
+  } catch (e) {
+    // Fall back to no versions if fetch fails
+  }
+
+  const source = window.location.origin;
+  let yaml = 'source: ' + source + '\ninstalled:\n';
+  names.sort().forEach(name => {
+    const ver = versions[name] ? '"' + versions[name] + '"' : '"latest"';
+    yaml += '  ' + name + ': ' + ver + '\n';
+  });
+
+  const blob = new Blob([yaml], { type: 'text/yaml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'skills.yaml';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  document.getElementById('yaml-modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('yaml-modal')) {
+    e.target.classList.remove('open');
+  }
+}
+
+function copyModalCmd() {
+  navigator.clipboard.writeText('skillsctl sync').then(() => {
+    const btn = event.currentTarget;
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 1800);
+  });
+}
 </script>
 {% endblock %}

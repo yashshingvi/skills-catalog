@@ -27,15 +27,15 @@ def update(ctx: click.Context, names: tuple[str, ...]) -> None:
             console.print(f"[yellow]'{name}' is not installed — use 'skillsctl install {name}' first[/]")
             continue
 
-        local_version = lockfile.installed[name]
+        entry = lockfile.installed[name]
         item = client.get_item(name)
         if item is None:
             console.print(f"[yellow]'{name}' not found in catalog[/]")
             continue
 
         remote_version = item["version"]
-        if local_version == remote_version:
-            console.print(f"  [dim]{name} already at {local_version} (latest)[/]")
+        if entry.version == remote_version:
+            console.print(f"  [dim]{name} already at {entry.version} (latest)[/]")
             continue
 
         raw = client.get_raw(name)
@@ -43,12 +43,16 @@ def update(ctx: click.Context, names: tuple[str, ...]) -> None:
             console.print(f"[yellow]'{name}' — could not download[/]")
             continue
 
-        category = item["category"]
-        target_dir = project_root / SKILLS_DIR / category
+        # Respect the original install path stored in the lockfile
+        if entry.path is not None:
+            target_dir = project_root / entry.path
+        else:
+            target_dir = project_root / SKILLS_DIR / item["category"]
+
         target_dir.mkdir(parents=True, exist_ok=True)
         target_file = target_dir / f"{name}.md"
         target_file.write_text(raw, encoding="utf-8")
-        lockfile.add(name, remote_version)
-        console.print(f"  [green]+ {name}[/] {local_version} → {remote_version}")
+        lockfile.add(name, remote_version, path=entry.path)
+        console.print(f"  [green]+ {name}[/] {entry.version} → {remote_version}")
 
     lockfile.save()
