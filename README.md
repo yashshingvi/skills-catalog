@@ -212,7 +212,12 @@ skillsctl search "slack" --category skills --tag api
 skillsctl install <name1> <name2> ...
 skillsctl install send-slack-notification --with-deps    # resolves requires
 skillsctl install slack-ops-agent --no-deps              # skip dependencies
-skillsctl install my-rule --path .claude/commands        # custom output directory
+skillsctl install my-rule --path .claude/commands        # one-off custom directory (flat)
+
+# Set a project-wide default output directory
+skillsctl config base-dir .claude     # all future installs → .claude/{category}/{name}.md
+skillsctl config base-dir .windsurf   # or .windsurf/{category}/{name}.md
+skillsctl config base-dir --unset     # reset to .skillsctl
 
 # List installed items
 skillsctl list
@@ -237,9 +242,22 @@ skillsctl --source https://catalog.acme-corp.com install my-skill
 export SKILLSCTL_SOURCE=https://catalog.acme-corp.com
 ```
 
-### `--path` — custom output directory
+### `config base-dir` — set a project-wide default directory
 
-By default files land in `.skills/{category}/{name}.md`. Use `--path` to write them anywhere:
+Set it once and every install goes to `{dir}/{category}/{name}.md` automatically:
+
+```bash
+skillsctl config base-dir .claude     # → .claude/skills/…  .claude/agents/…  etc.
+skillsctl config base-dir .windsurf   # → .windsurf/skills/… .windsurf/rules/… etc.
+skillsctl config base-dir             # show current value
+skillsctl config base-dir --unset     # reset to .skillsctl (default)
+```
+
+This writes `base_dir` to `skills.yaml` and is respected by all commands (`install`, `sync`, `update`, `remove`).
+
+### `--path` — per-install override
+
+For one-off installs into a specific directory (flat, no category subfolder):
 
 ```bash
 # Install a rule directly into Claude Code's commands folder
@@ -249,7 +267,7 @@ skillsctl install no-direct-prod-deploy --path .claude/commands
 skillsctl install summarise-ticket --path src/prompts
 ```
 
-Files are written flat as `{name}.md` — no category subfolder is added. The path is remembered per-item in `skills.yaml` so `sync`, `update`, and `remove` all pick it up automatically. Dependencies installed via `--with-deps` always go to the default `.skills/{category}/` location.
+Files are written flat as `{name}.md` — no category subfolder is added. The path is remembered per-item in `skills.yaml` so `sync`, `update`, and `remove` all pick it up automatically. Dependencies installed via `--with-deps` always go to the default `.skillsctl/{category}/` location.
 
 ### Lockfile (`skills.yaml`)
 
@@ -257,22 +275,23 @@ Files are written flat as `{name}.md` — no category subfolder is added. The pa
 
 ```yaml
 source: https://catalog.acme-corp.com
+base_dir: .claude                  # optional — set via: skillsctl config base-dir .claude
 installed:
   http-request: "1.3.0"
   send-slack-notification: "2.1.0"
-  no-direct-prod-deploy:           # installed with --path
+  no-direct-prod-deploy:           # installed with --path (one-off override)
     version: "1.0.0"
     path: .claude/commands
 ```
 
 You can also **generate this file from the UI**: select items on the catalog page, click "Download skills.yaml", place the file in your project root, then run `skillsctl sync` to install everything at once.
 
-Installed files are saved to `.skills/{category}/{name}.md` by default, or to the custom path stored in `skills.yaml`:
+Installed files are saved to `.skillsctl/{category}/{name}.md` by default, or to the custom path stored in `skills.yaml`:
 
 ```
 your-project/
 ├── skills.yaml
-├── .skills/
+├── .skillsctl/
 │   ├── skills/
 │   │   ├── http-request.md
 │   │   └── send-slack-notification.md
@@ -284,7 +303,7 @@ your-project/
 └── ... your code ...
 ```
 
-Commit `skills.yaml` and `.skills/` to your repo so your team shares the same set of skills.
+Commit `skills.yaml` and `.skillsctl/` to your repo so your team shares the same set of skills.
 
 ---
 

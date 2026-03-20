@@ -1,15 +1,12 @@
 """skillsctl remove — remove installed items."""
 from __future__ import annotations
 
-from pathlib import Path
-
 import click
 from rich.console import Console
 
 from ..lockfile import Lockfile
 
 console = Console()
-SKILLS_DIR = ".skills"
 
 
 @click.command("remove")
@@ -19,7 +16,7 @@ def remove(ctx: click.Context, names: tuple[str, ...]) -> None:
     """Remove installed skills, agents, rules, or workflows."""
     lockfile: Lockfile = ctx.obj["lockfile"]
     project_root = lockfile.path.parent
-    skills_dir = project_root / SKILLS_DIR
+    base_dir = lockfile.resolve_base_dir()
 
     removed = 0
     for name in names:
@@ -27,15 +24,24 @@ def remove(ctx: click.Context, names: tuple[str, ...]) -> None:
             console.print(f"[yellow]'{name}' is not installed, skipping[/]")
             continue
 
-        # Find and delete the file (scan subdirs since category is in path)
+        entry = lockfile.installed[name]
+
+        if entry.path is not None:
+            candidates = [project_root / entry.path / f"{name}.md"]
+        else:
+            base = project_root / base_dir
+            candidates = list(base.rglob(f"{name}.md")) if base.exists() else []
+
         found = False
-        for md in skills_dir.rglob(f"{name}.md"):
-            md.unlink()
-            found = True
-            # Remove empty parent dirs
-            parent = md.parent
-            if parent != skills_dir and not any(parent.iterdir()):
-                parent.rmdir()
+        for md in candidates:
+            if md.exists():
+                md.unlink()
+                found = True
+                if entry.path is None:
+                    parent = md.parent
+                    base = project_root / base_dir
+                    if parent != base and not any(parent.iterdir()):
+                        parent.rmdir()
 
         lockfile.remove(name)
         removed += 1

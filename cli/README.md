@@ -23,6 +23,11 @@ skillsctl install send-slack-notification slack-ops-agent --with-deps
 # Install into a custom directory (flat, no category subfolder)
 skillsctl install my-rule --path .claude/commands
 
+# Set a project-wide default output directory
+skillsctl config base-dir .claude     # → .claude/skills/… .claude/agents/… etc.
+skillsctl config base-dir .windsurf   # → .windsurf/rules/… .windsurf/agents/… etc.
+skillsctl config base-dir --unset     # reset to .skillsctl (default)
+
 # List installed items
 skillsctl list
 
@@ -65,4 +70,8 @@ installed:
     path: .claude/commands
 ```
 
-By default files are saved to `.skills/{category}/{name}.md`. Use `--path <dir>` at install time to write to a custom directory instead — the path is stored in `skills.yaml` and respected by `sync`, `update`, and `remove` automatically.
+By default files are saved to `.skillsctl/{category}/{name}.md`.
+
+Use `skillsctl config base-dir <dir>` to change the default for the whole project — e.g. `skillsctl config base-dir .claude` makes all installs go to `.claude/{category}/{name}.md`. This is stored as `base_dir` in `skills.yaml`.
+
+Use `--path <dir>` on a single install for a one-off override (flat, no category subfolder).
