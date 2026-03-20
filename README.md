@@ -26,6 +26,7 @@ Think **npm for enterprise knowledge** — but powered by markdown and frontmatt
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        │  CATALOG_CONTENT_REPO=https://github.com/acme-corp/playbooks.git
+                       │  (or just add .md files to content/ in this repo — no separate repo needed)
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  Catalog Server (FastAPI)                                   │
