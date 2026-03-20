@@ -29,7 +29,7 @@ def sync(ctx: click.Context) -> None:
     unchanged = 0
     errors = 0
 
-    for name, local_version in list(lockfile.installed.items()):
+    for name, entry in list(lockfile.installed.items()):
         item = client.get_item(name)
         if item is None:
             console.print(f"  [yellow]! {name}[/] — not found in catalog")
@@ -43,15 +43,19 @@ def sync(ctx: click.Context) -> None:
             errors += 1
             continue
 
-        category = item["category"]
-        target_dir = project_root / SKILLS_DIR / category
+        # Respect the original install path stored in the lockfile
+        if entry.path is not None:
+            target_dir = project_root / entry.path
+        else:
+            target_dir = project_root / SKILLS_DIR / item["category"]
+
         target_dir.mkdir(parents=True, exist_ok=True)
         target_file = target_dir / f"{name}.md"
         target_file.write_text(raw, encoding="utf-8")
-        lockfile.add(name, remote_version)
+        lockfile.add(name, remote_version, path=entry.path)
 
-        if local_version != remote_version:
-            console.print(f"  [green]+ {name}[/] {local_version} → {remote_version}")
+        if entry.version != remote_version:
+            console.print(f"  [green]+ {name}[/] {entry.version} → {remote_version}")
             updated += 1
         else:
             unchanged += 1

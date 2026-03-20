@@ -19,7 +19,6 @@ def remove(ctx: click.Context, names: tuple[str, ...]) -> None:
     """Remove installed skills, agents, rules, or workflows."""
     lockfile: Lockfile = ctx.obj["lockfile"]
     project_root = lockfile.path.parent
-    skills_dir = project_root / SKILLS_DIR
 
     removed = 0
     for name in names:
@@ -27,15 +26,28 @@ def remove(ctx: click.Context, names: tuple[str, ...]) -> None:
             console.print(f"[yellow]'{name}' is not installed, skipping[/]")
             continue
 
-        # Find and delete the file (scan subdirs since category is in path)
+        entry = lockfile.installed[name]
+
+        # Determine where the file lives based on lockfile metadata
+        if entry.path is not None:
+            # Custom install path — file is flat in that directory
+            candidates = [project_root / entry.path / f"{name}.md"]
+        else:
+            # Default location — scan .skills/ subdirs (category unknown at remove time)
+            skills_dir = project_root / SKILLS_DIR
+            candidates = list(skills_dir.rglob(f"{name}.md"))
+
         found = False
-        for md in skills_dir.rglob(f"{name}.md"):
-            md.unlink()
-            found = True
-            # Remove empty parent dirs
-            parent = md.parent
-            if parent != skills_dir and not any(parent.iterdir()):
-                parent.rmdir()
+        for md in candidates:
+            if md.exists():
+                md.unlink()
+                found = True
+                # Remove empty parent dirs (only for default .skills/ layout)
+                if entry.path is None:
+                    parent = md.parent
+                    skills_dir = project_root / SKILLS_DIR
+                    if parent != skills_dir and not any(parent.iterdir()):
+                        parent.rmdir()
 
         lockfile.remove(name)
         removed += 1
