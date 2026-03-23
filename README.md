@@ -151,10 +151,18 @@ The catalog will pull and re-index within seconds of a push.
 # Install the CLI
 pip install skillsctl
 
-# Point it at your catalog
-export SKILLSCTL_SOURCE=https://catalog.acme-corp.com
+# Browse and install — first run will prompt for your catalog URL
+skillsctl install send-slack-notification --with-deps
+```
 
-# Browse and install
+On first run (no `skills.yaml` found), `skillsctl` will interactively ask for:
+- **Catalog source URL** — your catalog server (e.g. `https://catalog.acme-corp.com`)
+- **Default install directory** — where files are saved (default: `.skillsctl`) (eg - `.claude`)
+
+Config is saved to `skills.yaml` so subsequent runs use it automatically. You can also set it upfront:
+
+```bash
+export SKILLSCTL_SOURCE=https://catalog.acme-corp.com
 skillsctl search "slack"
 skillsctl install send-slack-notification --with-deps
 ```
