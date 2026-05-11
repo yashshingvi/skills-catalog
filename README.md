@@ -155,7 +155,7 @@ export SKILLSCTL_SOURCE=https://catalog.acme-corp.com
 
 # Browse and install
 skillsctl search "slack"
-skillsctl install send-slack-notification --with-deps
+skillsctl install send-slack-notification
 ```
 
 ---
@@ -208,10 +208,9 @@ Install: `pip install skillsctl`
 skillsctl search <query>
 skillsctl search "slack" --category skills --tag api
 
-# Install items into your project
+# Install items into your project (required dependencies are pulled in by default)
 skillsctl install <name1> <name2> ...
-skillsctl install send-slack-notification --with-deps    # resolves requires
-skillsctl install slack-ops-agent --no-deps              # skip dependencies
+skillsctl install slack-ops-agent --no-deps              # skip dependency resolution
 skillsctl install my-rule --path .claude/commands        # one-off custom directory (flat)
 
 # Set a project-wide default output directory
@@ -267,7 +266,7 @@ skillsctl install no-direct-prod-deploy --path .claude/commands
 skillsctl install summarise-ticket --path src/prompts
 ```
 
-Files are written flat as `{name}.md` — no category subfolder is added. The path is remembered per-item in `skills.yaml` so `sync`, `update`, and `remove` all pick it up automatically. Dependencies installed via `--with-deps` always go to the default `.skillsctl/{category}/` location.
+Files are written flat as `{name}.md` — no category subfolder is added. The path is remembered per-item in `skills.yaml` so `sync`, `update`, and `remove` all pick it up automatically. Dependencies pulled in alongside an explicit install always go to the default `.skillsctl/{category}/` location, never to the `--path` directory.
 
 ### Lockfile (`skills.yaml`)
 
@@ -446,7 +445,7 @@ volumes:
 Store reusable prompts, agent system prompts, and tool definitions as versioned markdown. Teams install specific skills into their AI projects:
 
 ```bash
-skillsctl install code-reviewer incident-responder --with-deps
+skillsctl install code-reviewer incident-responder
 ```
 
 ### As a Runbook / Playbook Catalog

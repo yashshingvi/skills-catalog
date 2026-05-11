@@ -17,8 +17,8 @@ skillsctl search slack
 # Install a skill
 skillsctl install send-slack-notification
 
-# Install multiple items with dependencies
-skillsctl install send-slack-notification slack-ops-agent --with-deps
+# Install multiple items at once (required dependencies are pulled in by default)
+skillsctl install send-slack-notification slack-ops-agent
 
 # Install into a custom directory (flat, no category subfolder)
 skillsctl install my-rule --path .claude/commands

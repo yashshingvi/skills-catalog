@@ -10,3 +10,4 @@ catalog.db
 *.egg-info/
 dist/
 build/
+graphify-out/

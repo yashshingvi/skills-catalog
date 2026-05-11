@@ -115,9 +115,9 @@ def ui_index(
     categories = sorted({i.category for i in store.all_items()})
 
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "items": items_list,
             "total": total,
             "query": q,
@@ -144,9 +144,9 @@ def ui_item(request: Request, name: str):
     base_url = str(request.base_url).rstrip("/")
 
     return templates.TemplateResponse(
+        request,
         "item.html",
         {
-            "request": request,
             "item": item,
             "versions": versions,
             "rendered_html": rendered_html,
